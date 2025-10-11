@@ -197,33 +197,8 @@
     tr:hover {
       background: #f8f9fa;
     }
-    .date-separator {
-      background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-      font-weight: bold;
-      color: #0c5460;
-      padding: 10px !important;
-    }
     
     .hidden { display: none; }
-    
-    .sync-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-left: 10px;
-      animation: pulse 2s infinite;
-    }
-    .sync-indicator.synced {
-      background: #28a745;
-    }
-    .sync-indicator.not-synced {
-      background: #ffc107;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
     
     .stats-row {
       display: grid;
@@ -248,12 +223,6 @@
       font-size: 32px;
       font-weight: bold;
     }
-    
-    .efficiency-input {
-      width: 80px !important;
-      text-align: center;
-      font-weight: bold;
-    }
 
     .date-group {
       margin-bottom: 30px;
@@ -273,23 +242,24 @@
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
-    .editable-cell {
-      cursor: pointer;
-      transition: background 0.2s;
+    .efficiency-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .editable-cell:hover {
-      background: #e3f2fd;
-    }
-
-    .edit-input {
-      width: 100%;
-      padding: 5px;
-      border: 2px solid #667eea;
-      border-radius: 4px;
+    .efficiency-input {
+      width: 100px;
+      padding: 8px;
+      border: 2px solid white;
+      border-radius: 6px;
+      font-weight: bold;
       text-align: center;
+      color: #333;
     }
   </style>
 </head>
@@ -297,12 +267,16 @@
   <div class="container">
     <h2>📊 Daily Work Log</h2>
 
-    <!-- Configuration Section (Hidden) -->
-    <div class="config-section hidden">
+    <!-- Configuration Section -->
+    <div class="config-section">
       <h3>☁️ Google Sheets Configuration</h3>
       <div class="form-row">
         <label>Google Apps Script URL:</label>
-      <input type="url" id="scriptUrl"placeholder="https://script.google.com/macros/s/AKfycbxDFk93SyM0ZiseuBmLsiG5KA8wpDdrTI1YXraQT_scj1sqhWUlRJzMRYEcgt9mgfx3EA/exec">
+        <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbxDFk93SyM0ZiseuBmLsiG5KA8wpDdrTI1YXraQT_scj1sqhWUlRJzMRYEcgt9mgfx3EA/exec">
+      </div>
+      <div class="buttons">
+        <button class="primary-btn" onclick="testConnection()">🔗 Test Connection</button>
+        <button class="secondary-btn" onclick="saveConfig()">💾 Save Config</button>
       </div>
     </div>
     <div id="connectionStatus"></div>
@@ -319,7 +293,7 @@
 
     <!-- Input Form -->
     <div id="form-section" class="form-section hidden">
-      <h3 id="workerName">Selected Worker: <span class="sync-indicator synced"></span></h3>
+      <h3 id="workerName">Selected Worker</h3>
       
       <div class="form-row">
         <label>📅 Date:</label>
@@ -367,27 +341,35 @@
   <script>
     let currentWorker = "";
     let workersData = {};
-    let config = {
-      scriptUrl: ""
-    };
 
-    // Load config on page load and auto-connect
+    // Load config on page load
     window.addEventListener('DOMContentLoaded', () => {
       const saved = JSON.parse(localStorage.getItem('workLogConfig') || '{}');
       if (saved.scriptUrl) {
-        config = saved;
-        document.getElementById('scriptUrl').value = config.scriptUrl;
-        autoConnect();
+        document.getElementById('scriptUrl').value = saved.scriptUrl;
       }
       document.getElementById("date").valueAsDate = new Date();
     });
 
-    async function autoConnect() {
+    function saveConfig() {
+      const scriptUrl = document.getElementById('scriptUrl').value;
+      if (!scriptUrl) {
+        showStatus("⚠️ Please enter the Google Apps Script URL!", "error");
+        return;
+      }
+      localStorage.setItem('workLogConfig', JSON.stringify({ scriptUrl }));
+      showStatus("✅ Configuration saved!", "success");
+    }
+
+    async function testConnection() {
       const scriptUrl = document.getElementById("scriptUrl").value;
       
       if (!scriptUrl) {
+        showStatus("⚠️ Please enter Google Apps Script URL first!", "error");
         return;
       }
+
+      showStatus("🔗 Testing connection...", "loading");
 
       try {
         const response = await fetch(scriptUrl + '?action=test');
@@ -396,29 +378,26 @@
         
         if (result.success) {
           showStatus("✅ Connected to Google Sheets successfully!", "success");
+        } else {
+          showStatus("❌ Connection failed: " + result.error, "error");
         }
       } catch (error) {
-        showStatus("⚠️ Could not connect to Google Sheets. Please check configuration.", "error");
+        showStatus("❌ Connection error: " + error.message, "error");
       }
-    }
-
-    function saveConfig() {
-      config.scriptUrl = document.getElementById('scriptUrl').value;
-      localStorage.setItem('workLogConfig', JSON.stringify(config));
-      showStatus("✅ Configuration saved!", "success");
     }
 
     function selectWorker(name) {
       currentWorker = name;
       
       document.querySelectorAll('.buttons button').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent === name) {
+        if (btn.textContent.includes(name)) {
           btn.classList.add('active');
+        } else if (btn.textContent.length < 20) {
+          btn.classList.remove('active');
         }
       });
       
-      document.getElementById("workerName").innerHTML = `Selected Worker: <strong>${name}</strong> <span class="sync-indicator synced"></span>`;
+      document.getElementById("workerName").innerHTML = `Selected Worker: <strong>${name}</strong>`;
       document.getElementById("form-section").classList.remove("hidden");
       document.getElementById("stats-section").classList.remove("hidden");
       document.getElementById("table-section").classList.remove("hidden");
@@ -435,6 +414,7 @@
         <input type="time" class="from" placeholder="From">
         <input type="time" class="to" placeholder="To">
         <select class="product">
+          <option>Other work</option>
           <option>PC 5H 2000KG</option>
           <option>PC 2H 2000KG</option>
           <option>PC 2H 2000KG AD</option>
@@ -532,48 +512,13 @@
       taskList.appendChild(div);
     }
 
-    function formatDateFromSheet(dateValue) {
-      if (!dateValue) return '';
-      
-      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-        return dateValue;
-      }
-      
-      try {
-        const date = new Date(dateValue);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      } catch (e) {
-        return dateValue;
-      }
-    }
-
-    function formatTimeFromSheet(timeValue) {
-      if (!timeValue) return '';
-      
-      if (typeof timeValue === 'string' && /^\d{1,2}:\d{2}$/.test(timeValue)) {
-        return timeValue;
-      }
-      
-      try {
-        const date = new Date(timeValue);
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-      } catch (e) {
-        return timeValue;
-      }
-    }
-
     async function finishDay() {
       const dateInput = document.getElementById("date").value;
       const taskDivs = document.querySelectorAll("#task-list .task-row");
       const scriptUrl = document.getElementById("scriptUrl").value;
 
       if (!scriptUrl) {
-        showStatus("⚠️ Please enter Google Apps Script URL first!", "error");
+        showStatus("⚠️ Please configure Google Apps Script URL first!", "error");
         return;
       }
 
@@ -639,6 +584,62 @@
       }
     }
 
+    function formatDateFromSheet(dateValue) {
+      if (!dateValue) return '';
+      
+      // If already in YYYY-MM-DD format
+      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+      }
+      
+      // Handle ISO date string (1899-12-30T00:40:28.000Z format)
+      if (typeof dateValue === 'string') {
+        try {
+          const date = new Date(dateValue);
+          if (!isNaN(date)) {
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+        } catch (e) {}
+      }
+      
+      // Handle number (Google Sheets date serial)
+      if (typeof dateValue === 'number') {
+        const date = new Date((dateValue - 25569) * 86400 * 1000);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      
+      return dateValue;
+    }
+
+    function formatTimeFromSheet(timeValue) {
+      if (!timeValue) return '';
+      
+      // If already in HH:MM format
+      if (typeof timeValue === 'string' && /^\d{1,2}:\d{2}$/.test(timeValue)) {
+        return timeValue;
+      }
+      
+      // Handle ISO time string
+      if (typeof timeValue === 'string') {
+        try {
+          const date = new Date(timeValue);
+          if (!isNaN(date)) {
+            const hours = String(date.getUTCHours()).padStart(2, '0');
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+          }
+        } catch (e) {}
+      }
+      
+      return timeValue;
+    }
+
     async function loadWorkerData() {
       const scriptUrl = document.getElementById("scriptUrl").value;
       
@@ -689,8 +690,8 @@
     function updateStats() {
       const data = workersData[currentWorker] || [];
       const totalTasks = data.length;
-      const totalGood = data.reduce((sum, task) => sum + (task.good || 0), 0);
-      const totalReject = data.reduce((sum, task) => sum + (task.reject || 0), 0);
+      const totalGood = data.reduce((sum, task) => sum + (parseInt(task.good) || 0), 0);
+      const totalReject = data.reduce((sum, task) => sum + (parseInt(task.reject) || 0), 0);
       const total = totalGood + totalReject;
       const successRate = total > 0 ? ((totalGood / total) * 100).toFixed(1) : 0;
       
@@ -700,112 +701,11 @@
       document.getElementById('successRate').textContent = successRate + '%';
     }
 
-    function makeEfficiencyEditable(cell, rowIndex) {
-      const currentValue = cell.textContent;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'edit-input';
-      input.value = currentValue;
-      input.maxLength = 6;
-      
-      input.onblur = function() {
-        cell.textContent = this.value;
-        cell.classList.add('editable-cell');
-        updateTaskEfficiency(rowIndex, this.value);
-      };
-      
-      input.onkeypress = function(e) {
-        if (e.key === 'Enter') {
-          this.blur();
-        }
-      };
-      
-      cell.textContent = '';
-      cell.appendChild(input);
-      cell.classList.remove('editable-cell');
-      input.focus();
-      input.select();
-    }
-
-    async function updateTaskEfficiency(rowIndex, efficiency) {
-      const scriptUrl = document.getElementById("scriptUrl").value;
-      
-      try {
-        const response = await fetch(scriptUrl, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'updateEfficiency',
-            rowIndex: rowIndex,
-            efficiency: efficiency
-          })
-        });
-
-        const result = JSON.parse(await response.text());
-        
-        if (result.success) {
-          console.log('Efficiency updated successfully');
-        }
-      } catch (error) {
-        console.error('Update efficiency error:', error);
-      }
-    }
-
-    function makeEfficiencyEditable(cell, rowIndex) {
-      const currentValue = cell.textContent;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'edit-input';
-      input.value = currentValue;
-      input.maxLength = 6;
-      
-      input.onblur = function() {
-        cell.textContent = this.value;
-        cell.classList.add('editable-cell');
-        updateTaskEfficiency(rowIndex, this.value);
-      };
-      
-      input.onkeypress = function(e) {
-        if (e.key === 'Enter') {
-          this.blur();
-        }
-      };
-      
-      cell.textContent = '';
-      cell.appendChild(input);
-      cell.classList.remove('editable-cell');
-      input.focus();
-      input.select();
-    }
-
-    async function updateTaskEfficiency(rowIndex, efficiency) {
-      const scriptUrl = document.getElementById("scriptUrl").value;
-      
-      try {
-        const response = await fetch(scriptUrl, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'updateEfficiency',
-            rowIndex: rowIndex,
-            efficiency: efficiency
-          })
-        });
-
-        const result = JSON.parse(await response.text());
-        
-        if (result.success) {
-          console.log('Efficiency updated successfully');
-        }
-      } catch (error) {
-        console.error('Update efficiency error:', error);
-      }
-    }
-
     function renderTable() {
       const dateGroupsDiv = document.getElementById("dateGroups");
       dateGroupsDiv.innerHTML = "";
 
       if (workersData[currentWorker] && workersData[currentWorker].length > 0) {
-        // Group by date
         const groupedByDate = {};
         workersData[currentWorker].forEach(task => {
           if (!groupedByDate[task.date]) {
@@ -814,7 +714,6 @@
           groupedByDate[task.date].push(task);
         });
 
-        // Render each date group
         Object.keys(groupedByDate).sort().reverse().forEach(date => {
           const tasks = groupedByDate[date];
           
@@ -824,16 +723,12 @@
           const header = document.createElement('div');
           header.className = 'date-group-header';
           
-          // Add efficiency input in header
           header.innerHTML = `
             <span>📅 ${date}</span>
-            <div style="display: flex; align-items: center; gap: 15px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <label style="color: white; font-weight: normal;">Efficiency:</label>
-                <input type="text" id="efficiency-${date}" class="efficiency-input" placeholder="%" maxlength="6" 
-                       style="width: 100px; padding: 8px; border: 2px solid white; border-radius: 6px; font-weight: bold; text-align: center;"
-                       value="${tasks[0].efficiency || ''}">
-              </div>
+            <div class="efficiency-section">
+              <label style="color: white; font-weight: normal;">Efficiency (%):</label>
+              <input type="text" id="efficiency-${date}" class="efficiency-input" placeholder="%" maxlength="6" 
+                     value="${tasks[0].efficiency || ''}">
               <button class="primary-btn" onclick="submitDateGroup('${date}')">📤 Submit All (${tasks.length} tasks)</button>
             </div>
           `;
@@ -857,12 +752,12 @@
           tasks.forEach(task => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${task.from}</td>
-              <td>${task.to}</td>
-              <td>${task.product}</td>
-              <td><strong>${task.good}</strong></td>
-              <td><strong>${task.reject}</strong></td>
-              <td>${task.remarks}</td>
+              <td>${task.from || '-'}</td>
+              <td>${task.to || '-'}</td>
+              <td>${task.product || '-'}</td>
+              <td><strong>${task.good || 0}</strong></td>
+              <td><strong>${task.reject || 0}</strong></td>
+              <td>${task.remarks || '-'}</td>
             `;
             tbody.appendChild(tr);
           });
@@ -891,9 +786,13 @@
         return;
       }
 
-      // Get efficiency value from input
       const efficiencyInput = document.getElementById(`efficiency-${date}`);
       const efficiency = efficiencyInput ? efficiencyInput.value : '';
+
+      if (!efficiency) {
+        showStatus("⚠️ Please enter efficiency percentage!", "error");
+        return;
+      }
 
       showStatus(`☁️ Submitting ${tasksForDate.length} task(s) for ${date}...`, "loading");
 
@@ -915,7 +814,7 @@
           await loadWorkerData();
           showStatus(`✅ Successfully submitted ${tasksForDate.length} task(s) for ${date}!`, "success");
         } else {
-          throw new Error(result.error);
+          throw new Error(result.error || 'Submit failed');
         }
       } catch (error) {
         showStatus("❌ Submit failed: " + error.message, "error");
