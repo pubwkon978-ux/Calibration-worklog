@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Work Log</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h2 { 
+      text-align: center; 
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2em;
+    }
+    
+    .config-section {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .config-section h3 {
+      color: #333;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-row { 
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .form-row label {
+      font-weight: 600;
+      color: #555;
+      min-width: 180px;
+    }
+    input, select { 
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s;
+      flex: 1;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .buttons { 
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .buttons button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .buttons button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .buttons button.active {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      transform: scale(1.05);
+    }
+    button:disabled { 
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .primary-btn {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+    .secondary-btn {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+    .danger-btn {
+      background: linear-gradient(135deg, #f85032 0%, #e73827 100%);
+      color: white;
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+    
+    .form-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .form-section h3 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+    
+    .task-row {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      align-items: center;
+    }
+    .task-row input, .task-row select {
+      margin: 0;
+    }
+    
+    .status { 
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+      font-weight: 600;
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .status.success { 
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .status.error { 
+      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+    .status.loading { 
+      background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e9ecef;
+    }
+    th { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .date-separator {
+      background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+      font-weight: bold;
+      color: #0c5460;
+      padding: 10px !important;
+    }
+    
+    .hidden { display: none; }
+    
+    .sync-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 10px;
+      animation: pulse 2s infinite;
+    }
+    .sync-indicator.synced {
+      background: #28a745;
+    }
+    .sync-indicator.not-synced {
+      background: #ffc107;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .stat-card h4 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      opacity: 0.9;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: bold;
+    }
+    
+    .efficiency-input {
+      width: 80px !important;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .date-group {
+      margin-bottom: 30px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 15px;
+      background: #f8f9fa;
+    }
+
+    .date-group-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .editable-cell {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .editable-cell:hover {
+      background: #e3f2fd;
+    }
+
+    .edit-input {
+      width: 100%;
+      padding: 5px;
+      border: 2px solid #667eea;
+      border-radius: 4px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📊 Daily Work Log</h2>
+
+    <!-- Configuration Section (Hidden) -->
+    <div class="config-section hidden">
+      <h3>☁️ Google Sheets Configuration</h3>
+      <div class="form-row">
+        <label>Google Apps Script URL:</label>
+      <input type="url" id="scriptUrl"placeholder="https://script.google.com/macros/s/AKfycbxDFk93SyM0ZiseuBmLsiG5KA8wpDdrTI1YXraQT_scj1sqhWUlRJzMRYEcgt9mgfx3EA/exec">
+      </div>
+    </div>
+    <div id="connectionStatus"></div>
+
+    <!-- Worker Selection -->
+    <div class="buttons">
+      <button onclick="selectWorker('DILUM')">DILUM</button>
+      <button onclick="selectWorker('MALSHANI')">MALSHANI</button>
+      <button onclick="selectWorker('CHATHURANGA')">CHATHURANGA</button>
+      <button onclick="selectWorker('ISHINI')">ISHINI</button>
+      <button onclick="selectWorker('CHAMINDU')">CHAMINDU</button>
+      <button onclick="selectWorker('LASHAN')">LASHAN</button>
+    </div>
+
+    <!-- Input Form -->
+    <div id="form-section" class="form-section hidden">
+      <h3 id="workerName">Selected Worker: <span class="sync-indicator synced"></span></h3>
+      
+      <div class="form-row">
+        <label>📅 Date:</label>
+        <input type="date" id="date">
+      </div>
+      
+      <div id="task-list"></div>
+      
+      <div class="buttons">
+        <button class="secondary-btn" onclick="addTaskRow()">➕ Add Task</button>
+        <button class="primary-btn" id="finishBtn" onclick="finishDay()">✅ Finish Day & Sync</button>
+        <button class="secondary-btn" onclick="loadWorkerData()">🔄 Reload from Cloud</button>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div id="stats-section" class="hidden">
+      <div class="stats-row">
+        <div class="stat-card">
+          <h4>Total Tasks</h4>
+          <div class="value" id="totalTasks">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Total Good</h4>
+          <div class="value" id="totalGood">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Total Reject</h4>
+          <div class="value" id="totalReject">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Success Rate</h4>
+          <div class="value" id="successRate">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Worker Table -->
+    <div id="table-section" class="hidden">
+      <h3>📋 Work History</h3>
+      <div id="dateGroups"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentWorker = "";
+    let workersData = {};
+    let config = {
+      scriptUrl: ""
+    };
+
+    // Load config on page load and auto-connect
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = JSON.parse(localStorage.getItem('workLogConfig') || '{}');
+      if (saved.scriptUrl) {
+        config = saved;
+        document.getElementById('scriptUrl').value = config.scriptUrl;
+        autoConnect();
+      }
+      document.getElementById("date").valueAsDate = new Date();
+    });
+
+    async function autoConnect() {
+      const scriptUrl = document.getElementById("scriptUrl").value;
+      
+      if (!scriptUrl) {
+        return;
+      }
+
+      try {
+        const response = await fetch(scriptUrl + '?action=test');
+        const text = await response.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          showStatus("✅ Connected to Google Sheets successfully!", "success");
+        }
+      } catch (error) {
+        showStatus("⚠️ Could not connect to Google Sheets. Please check configuration.", "error");
+      }
+    }
+
+    function saveConfig() {
+      config.scriptUrl = document.getElementById('scriptUrl').value;
+      localStorage.setItem('workLogConfig', JSON.stringify(config));
+      showStatus("✅ Configuration saved!", "success");
+    }
+
+    function selectWorker(name) {
+      currentWorker = name;
+      
+      document.querySelectorAll('.buttons button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === name) {
+          btn.classList.add('active');
+        }
+      });
+      
+      document.getElementById("workerName").innerHTML = `Selected Worker: <strong>${name}</strong> <span class="sync-indicator synced"></span>`;
+      document.getElementById("form-section").classList.remove("hidden");
+      document.getElementById("stats-section").classList.remove("hidden");
+      document.getElementById("table-section").classList.remove("hidden");
+      document.getElementById("task-list").innerHTML = "";
+      addTaskRow();
+      loadWorkerData();
+    }
+
+    function addTaskRow() {
+      const taskList = document.getElementById("task-list");
+      const div = document.createElement("div");
+      div.classList.add("task-row");
+      div.innerHTML = `
+        <input type="time" class="from" placeholder="From">
+        <input type="time" class="to" placeholder="To">
+        <select class="product">
+          <option>PC 5H 2000KG</option>
+          <option>PC 2H 2000KG</option>
+          <option>PC 2H 2000KG AD</option>
+          <option>PC 7H 1000KG</option>
+          <option>PC 6H 2000KG</option>
+          <option>PC 3H 5000KG</option>
+          <option>PC 81 2000KG</option>
+          <option>BOOM</option>
+          <option>ULC</option>
+          <option>UEL</option>
+          <option>PC1 10KG M</option>
+          <option>PC1 10KG U</option>
+          <option>PC1 15KG M</option>
+          <option>PC1 15KG U</option>
+          <option>PC1 15KG ACMA</option>
+          <option>PC1 30KG M</option>
+          <option>PC1 30KG U</option>
+          <option>PC1 50KG M</option>
+          <option>PC1 50KG U</option>
+          <option>PC1 100KG M</option>
+          <option>PC1 100KG U</option>
+          <option>PC1 200KG M</option>
+          <option>PC1 200KG U</option>
+          <option>PC6 10KG</option>
+          <option>PC6 20KG</option>
+          <option>PC6 S 20KG</option>
+          <option>PC6 50KG</option>
+          <option>PC6 S 50KG</option>
+          <option>PC6 100KG</option>
+          <option>PC6 200KG</option>
+          <option>PCB 50KG M</option>
+          <option>PCB 50KG U</option>
+          <option>PCB 100KG M</option>
+          <option>PCB 100KG U</option>
+          <option>PCB 250KG M</option>
+          <option>PCB 250KG U</option>
+          <option>PCB 500KG M</option>
+          <option>PCB 500KG U</option>
+          <option>PCB 1000KG M</option>
+          <option>PCB 1000KG U</option>
+          <option>PCBC 50KG M</option>
+          <option>PCBC 50KG U</option>
+          <option>PCBC 100KG M</option>
+          <option>PCBC 100KG U</option>
+          <option>PCBC 250KG M</option>
+          <option>PCBC 250KG U</option>
+          <option>PCBC 500KG M</option>
+          <option>PCBC 500KG U</option>
+          <option>PCBC 1000KG M</option>
+          <option>PCBC 1000KG U</option>
+          <option>PC60 30KG</option>
+          <option>PC60 50KG</option>
+          <option>PC60 100KG</option>
+          <option>PC60 150KG</option>
+          <option>PC60 200KG</option>
+          <option>PC60 300KG</option>
+          <option>PC60 500KG</option>
+          <option>PC60 750KG</option>
+          <option>PC22 5KG</option>
+          <option>PC22 10KG</option>
+          <option>PC22 10KG (#830)</option>
+          <option>PC22 20KG</option>
+          <option>PC22 30KG</option>
+          <option>PC22 40KG</option>
+          <option>PC22 50KG</option>
+          <option>PC30 7KG</option>
+          <option>PC30 10KG</option>
+          <option>PC30 15KG</option>
+          <option>PC30 20KG</option>
+          <option>PC30 30KG</option>
+          <option>PC30 50KG</option>
+          <option>PC30 100KG</option>
+          <option>PC7 100KG</option>
+          <option>PC7 250KG</option>
+          <option>PC7 500KG</option>
+          <option>PC42 5KG</option>
+          <option>PC42 10KG</option>
+          <option>PC42 20KG</option>
+          <option>PC42 30KG</option>
+          <option>PC42 40KG</option>
+          <option>PC42 50KG</option>
+          <option>PC42 100KG</option>
+          <option>PC42 200KG</option>
+          <option>PC46 50KG</option>
+          <option>PC46 100KG</option>
+          <option>PC46 150KG</option>
+          <option>PC46 200KG</option>
+          <option>PC46 250KG</option>
+        </select>
+        <input type="number" class="good" value="0" placeholder="Good">
+        <input type="number" class="reject" value="0" placeholder="Reject">
+        <input type="text" class="remarks" placeholder="Remarks">
+        <button class="danger-btn" onclick="this.parentElement.remove()">🗑️</button>
+      `;
+      taskList.appendChild(div);
+    }
+
+    function formatDateFromSheet(dateValue) {
+      if (!dateValue) return '';
+      
+      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+      }
+      
+      try {
+        const date = new Date(dateValue);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (e) {
+        return dateValue;
+      }
+    }
+
+    function formatTimeFromSheet(timeValue) {
+      if (!timeValue) return '';
+      
+      if (typeof timeValue === 'string' && /^\d{1,2}:\d{2}$/.test(timeValue)) {
+        return timeValue;
+      }
+      
+      try {
+        const date = new Date(timeValue);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+      } catch (e) {
+        return timeValue;
+      }
+    }
+
+    async function finishDay() {
+      const dateInput = document.getElementById("date").value;
+      const taskDivs = document.querySelectorAll("#task-list .task-row");
+      const scriptUrl = document.getElementById("scriptUrl").value;
+
+      if (!scriptUrl) {
+        showStatus("⚠️ Please enter Google Apps Script URL first!", "error");
+        return;
+      }
+
+      if (!dateInput) {
+        showStatus("⚠️ Please select a date!", "error");
+        return;
+      }
+
+      if (taskDivs.length === 0) {
+        showStatus("⚠️ Please add at least one task!", "error");
+        return;
+      }
+
+      showStatus("☁️ Syncing data to Google Sheets...", "loading");
+      const finishBtn = document.getElementById("finishBtn");
+      finishBtn.disabled = true;
+
+      const dateObj = new Date(dateInput);
+      const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+
+      const newTasks = [];
+      taskDivs.forEach(div => {
+        const task = {
+          worker: currentWorker,
+          date: formattedDate,
+          from: div.querySelector(".from").value || '',
+          to: div.querySelector(".to").value || '',
+          product: div.querySelector(".product").value || '',
+          good: parseInt(div.querySelector(".good").value) || 0,
+          reject: parseInt(div.querySelector(".reject").value) || 0,
+          remarks: div.querySelector(".remarks").value || ''
+        };
+        newTasks.push(task);
+      });
+
+      try {
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'addData',
+            tasks: newTasks
+          })
+        });
+
+        const text = await response.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          document.getElementById("task-list").innerHTML = "";
+          addTaskRow();
+          document.getElementById("date").valueAsDate = new Date();
+          
+          await loadWorkerData();
+          showStatus(`✅ Successfully synced ${newTasks.length} task(s) to Google Sheets!`, "success");
+        } else {
+          throw new Error(result.error || 'Failed to sync data');
+        }
+      } catch (error) {
+        console.error('Sync error:', error);
+        showStatus(`❌ Sync failed: ${error.message}`, "error");
+      } finally {
+        finishBtn.disabled = false;
+      }
+    }
+
+    async function loadWorkerData() {
+      const scriptUrl = document.getElementById("scriptUrl").value;
+      
+      if (!scriptUrl) {
+        showStatus("⚠️ Please configure Google Sheets URL first!", "error");
+        return;
+      }
+
+      showStatus("☁️ Loading data from Google Sheets...", "loading");
+
+      try {
+        const response = await fetch(scriptUrl + '?action=getData&worker=' + encodeURIComponent(currentWorker));
+        const text = await response.text();
+        const result = JSON.parse(text);
+        
+        if (result.success) {
+          const formattedData = (result.data || []).map(task => ({
+            ...task,
+            date: formatDateFromSheet(task.date),
+            from: formatTimeFromSheet(task.from),
+            to: formatTimeFromSheet(task.to)
+          }));
+          
+          workersData[currentWorker] = formattedData;
+          renderTable();
+          updateStats();
+          showStatus(`✅ Loaded ${formattedData.length} records from cloud!`, "success");
+        } else {
+          throw new Error(result.error || 'Failed to load data');
+        }
+      } catch (error) {
+        console.error('Load error:', error);
+        showStatus(`❌ Failed to load data: ${error.message}`, "error");
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById("connectionStatus");
+      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+      
+      if (type === "success") {
+        setTimeout(() => {
+          statusDiv.innerHTML = "";
+        }, 4000);
+      }
+    }
+
+    function updateStats() {
+      const data = workersData[currentWorker] || [];
+      const totalTasks = data.length;
+      const totalGood = data.reduce((sum, task) => sum + (task.good || 0), 0);
+      const totalReject = data.reduce((sum, task) => sum + (task.reject || 0), 0);
+      const total = totalGood + totalReject;
+      const successRate = total > 0 ? ((totalGood / total) * 100).toFixed(1) : 0;
+      
+      document.getElementById('totalTasks').textContent = totalTasks;
+      document.getElementById('totalGood').textContent = totalGood;
+      document.getElementById('totalReject').textContent = totalReject;
+      document.getElementById('successRate').textContent = successRate + '%';
+    }
+
+    function makeEfficiencyEditable(cell, rowIndex) {
+      const currentValue = cell.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'edit-input';
+      input.value = currentValue;
+      input.maxLength = 6;
+      
+      input.onblur = function() {
+        cell.textContent = this.value;
+        cell.classList.add('editable-cell');
+        updateTaskEfficiency(rowIndex, this.value);
+      };
+      
+      input.onkeypress = function(e) {
+        if (e.key === 'Enter') {
+          this.blur();
+        }
+      };
+      
+      cell.textContent = '';
+      cell.appendChild(input);
+      cell.classList.remove('editable-cell');
+      input.focus();
+      input.select();
+    }
+
+    async function updateTaskEfficiency(rowIndex, efficiency) {
+      const scriptUrl = document.getElementById("scriptUrl").value;
+      
+      try {
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updateEfficiency',
+            rowIndex: rowIndex,
+            efficiency: efficiency
+          })
+        });
+
+        const result = JSON.parse(await response.text());
+        
+        if (result.success) {
+          console.log('Efficiency updated successfully');
+        }
+      } catch (error) {
+        console.error('Update efficiency error:', error);
+      }
+    }
+
+    function makeEfficiencyEditable(cell, rowIndex) {
+      const currentValue = cell.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'edit-input';
+      input.value = currentValue;
+      input.maxLength = 6;
+      
+      input.onblur = function() {
+        cell.textContent = this.value;
+        cell.classList.add('editable-cell');
+        updateTaskEfficiency(rowIndex, this.value);
+      };
+      
+      input.onkeypress = function(e) {
+        if (e.key === 'Enter') {
+          this.blur();
+        }
+      };
+      
+      cell.textContent = '';
+      cell.appendChild(input);
+      cell.classList.remove('editable-cell');
+      input.focus();
+      input.select();
+    }
+
+    async function updateTaskEfficiency(rowIndex, efficiency) {
+      const scriptUrl = document.getElementById("scriptUrl").value;
+      
+      try {
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updateEfficiency',
+            rowIndex: rowIndex,
+            efficiency: efficiency
+          })
+        });
+
+        const result = JSON.parse(await response.text());
+        
+        if (result.success) {
+          console.log('Efficiency updated successfully');
+        }
+      } catch (error) {
+        console.error('Update efficiency error:', error);
+      }
+    }
+
+    function renderTable() {
+      const dateGroupsDiv = document.getElementById("dateGroups");
+      dateGroupsDiv.innerHTML = "";
+
+      if (workersData[currentWorker] && workersData[currentWorker].length > 0) {
+        // Group by date
+        const groupedByDate = {};
+        workersData[currentWorker].forEach(task => {
+          if (!groupedByDate[task.date]) {
+            groupedByDate[task.date] = [];
+          }
+          groupedByDate[task.date].push(task);
+        });
+
+        // Render each date group
+        Object.keys(groupedByDate).sort().reverse().forEach(date => {
+          const tasks = groupedByDate[date];
+          
+          const dateGroup = document.createElement('div');
+          dateGroup.className = 'date-group';
+          
+          const header = document.createElement('div');
+          header.className = 'date-group-header';
+          
+          // Add efficiency input in header
+          header.innerHTML = `
+            <span>📅 ${date}</span>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="color: white; font-weight: normal;">Efficiency:</label>
+                <input type="text" id="efficiency-${date}" class="efficiency-input" placeholder="%" maxlength="6" 
+                       style="width: 100px; padding: 8px; border: 2px solid white; border-radius: 6px; font-weight: bold; text-align: center;"
+                       value="${tasks[0].efficiency || ''}">
+              </div>
+              <button class="primary-btn" onclick="submitDateGroup('${date}')">📤 Submit All (${tasks.length} tasks)</button>
+            </div>
+          `;
+          
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Product Type</th>
+                <th>Good</th>
+                <th>Reject</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          
+          const tbody = table.querySelector('tbody');
+          tasks.forEach(task => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${task.from}</td>
+              <td>${task.to}</td>
+              <td>${task.product}</td>
+              <td><strong>${task.good}</strong></td>
+              <td><strong>${task.reject}</strong></td>
+              <td>${task.remarks}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+          
+          dateGroup.appendChild(header);
+          dateGroup.appendChild(table);
+          dateGroupsDiv.appendChild(dateGroup);
+        });
+      } else {
+        dateGroupsDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">No data available. Add tasks and sync to cloud!</div>';
+      }
+    }
+
+    async function submitDateGroup(date) {
+      const scriptUrl = document.getElementById("scriptUrl").value;
+      
+      if (!scriptUrl) {
+        showStatus("⚠️ Please configure Google Sheets URL first!", "error");
+        return;
+      }
+
+      const tasksForDate = workersData[currentWorker].filter(task => task.date === date);
+      
+      if (tasksForDate.length === 0) {
+        showStatus("⚠️ No tasks found for this date!", "error");
+        return;
+      }
+
+      // Get efficiency value from input
+      const efficiencyInput = document.getElementById(`efficiency-${date}`);
+      const efficiency = efficiencyInput ? efficiencyInput.value : '';
+
+      showStatus(`☁️ Submitting ${tasksForDate.length} task(s) for ${date}...`, "loading");
+
+      try {
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'submitDateGroup',
+            date: date,
+            worker: currentWorker,
+            tasks: tasksForDate,
+            efficiency: efficiency
+          })
+        });
+
+        const result = JSON.parse(await response.text());
+        
+        if (result.success) {
+          await loadWorkerData();
+          showStatus(`✅ Successfully submitted ${tasksForDate.length} task(s) for ${date}!`, "success");
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        showStatus("❌ Submit failed: " + error.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>
